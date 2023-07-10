@@ -1,4 +1,4 @@
-const { MessageEmbed, EmbedBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const langs = require('./langs.js');
 
 module.exports = {
@@ -36,7 +36,7 @@ module.exports = {
             name: message.author.username,
             iconURL: message.author.avatarURL()
         };
-        const embed = new MessageEmbed()
+        const embed = new EmbedBuilder()
             .setColor('#9F4193')
             .setAuthor(author)
             .setDescription(`${text}${image ? `\r\n\r\n${image}` : ''} \r\n\r\n **Message link:** ${message.url}`)

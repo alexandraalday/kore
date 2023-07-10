@@ -71,9 +71,9 @@ client.on('messageReactionAdd', async (reaction, user) => {
     ];
     if (reaction.emoji.name === '🔖' && validChannels.includes(reaction.message.channel.type)) {
         if (reaction.message.embeds[0] && reaction.message.author.id === client.user.id) {
+            console.log(`${user.username} - result bookmark `);
             const embed = reaction.message.embeds[0];
             user.send({ embeds: [embed] }).then(msg => msg.react('❌'));
-            console.log(`${user.username} - result bookmark `);
         } else {
             console.log(`${user.username} - message bookmark `);
             DiscordUtil.bookmark(reaction.message, user);
