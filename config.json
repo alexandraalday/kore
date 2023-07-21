@@ -2,5 +2,6 @@
   "botToken":"",
   "clientId": "",
   "guildId": "",
-  "commandDirectories": ["./commands/context", "./commands/miscellaneous", "./commands/sejong"]
+  "commandDirectories": ["./commands/context", "./commands/miscellaneous", "./commands/sejong"],
+  "kkeunmalChannelId": ""
 }

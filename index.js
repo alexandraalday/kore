@@ -1,8 +1,9 @@
 const fs = require('fs');
-const { ChannelType, Client, Collection, GatewayIntentBits, Partials } = require('discord.js');
+const { ChannelType, Client, Collection, GatewayIntentBits, Partials, Events } = require('discord.js');
 const DiscordUtil = require('./common/discordutil');
-const { botToken, commandDirectories } = require('./config.json');
+const { botToken, commandDirectories, kkeunmalChannelId } = require('./config.json');
 const { deployCommands } = require('./deploy-commands');
+const { kkeunmal } = require('./game/kkeunmal');
 
 const client = new Client({
     partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember],
@@ -83,6 +84,16 @@ client.on('messageReactionAdd', async (reaction, user) => {
         if (user.id !== client.user.id && reaction.message.author.id === client.user.id) {
             reaction.message.delete();
         }
+    }
+});
+
+client.on(Events.MessageCreate, async (message) => {
+    if (message.author.bot) {
+        return;
+    }
+
+    if (message.channelId === kkeunmalChannelId) {
+        kkeunmal(message);
     }
 });
 
