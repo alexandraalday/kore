@@ -13,15 +13,14 @@ module.exports = {
                 .setRequired(true))
         .setDefaultMemberPermissions(0),
     async execute(interaction) {
-        // args = [args];
         const isDM = interaction.channel.type === ChannelType.DM;
-        // const q = args.join(" ");
         const query = interaction.options.getString('word');
         const api = new KrDicApi();
 
         await interaction.deferReply();
 
-        const response = await api.searchWords(query, 5, 7);
+        const response = await api.searchWords(query);
+        const parsedResponse = api.parseResult(response);
 
         const send = async () => {
             const enEmbed = DiscordUtil.createWordSearchEmbed(
@@ -29,14 +28,14 @@ module.exports = {
                 query,
                 interaction.user.username,
                 isDM,
-                response
+                parsedResponse
             );
             const krEmbed = DiscordUtil.createWordSearchEmbed(
                 'ko',
                 query,
                 interaction.user.username,
                 isDM,
-                response
+                parsedResponse
             );
 
             if (response.length === 0) {

@@ -72,29 +72,32 @@ module.exports = {
             embed.addFields({ name: 'No Results', value: 'No results have been found' });
         } else {
             this.setEmbedFooter(embed, `${username} can toggle languages. ${!isDM ? 'Anyone can bookmark this message.' : ''}`);
+
             searchResults.forEach((entry) => {
-                const defs = [];
-                let j;
-                if (entry.senses) {
-                    for (j = 0; j < entry.senses.length; j += 1) {
-                        const sense = entry.senses[j];
-                        let d;
-                        if (language === 'en') {
-                            d = `${j + 1}. __${sense.meaning}__\r\n${sense.translation}`;
-                        } else if (language === 'ko') {
-                            d = `${j + 1}. __${sense.meaning}__\r\n${sense.definition}`;
-                        }
-                        if (`${defs.join('\n')}\n${d}`.length < 1024) {
-                            defs.push(d);
+                const definitions = [];
+                entry.senses.forEach((sense, index) => {
+                    let definition;
+                    if (language === 'en') {
+                        sense.translations.forEach((translation) => {
+                            definition = `${index}. __${translation.meaning}__\r\n${translation.definition}`;
+                            if (`${definitions.join('\n')}\n${definition}`.length < 1024) {
+                                definitions.push(definition);
+                            }
+                        });
+                    } else if (language === 'ko') {
+                        definition = `${index}. ${sense.definition}`;
+                        if (`${definitions.join('\n')}\n${definition}`.length < 1024) {
+                            definitions.push(definition);
                         }
                     }
-                }
+                });
+
                 if (language === 'en') {
-                    const entryHeader = `**${entry.word}**${entry.hanja ? ` (${entry.hanja})` : ''} - ${entry.wordTypeTranslated}${entry.pronunciation ? ` - [${entry.pronunciation}]` : ''}${entry.stars > 0 ? '  ' + '★'.repeat(entry.stars) : ''}`;
-                    embed.addFields({ name: entryHeader, value: defs.join('\n') });
+                    const entryHeader = `**${entry.word}**${entry.hanja ? ` (${entry.hanja})` : ''} - ${entry.wordTypeTranslated}${entry.pronunciation ? ` - [${entry.pronunciation}]` : ''}`;
+                    embed.addFields({ name: entryHeader, value: definitions.join('\n') });
                 } else if (language === 'ko') {
-                    const entryHeader = `**${entry.word}**${entry.hanja ? ` (${entry.hanja})` : ''} - ${entry.wordType}${entry.pronunciation ? ` - [${entry.pronunciation}]` : ''}${entry.stars > 0 ? '  ' + '★'.repeat(entry.stars) : ''}`;
-                    embed.addFields({ name: entryHeader, value: defs.join('\n') });
+                    const entryHeader = `**${entry.word}**${entry.hanja ? ` (${entry.hanja})` : ''} - ${entry.wordType}${entry.pronunciation ? ` - [${entry.pronunciation}]` : ''}`;
+                    embed.addFields({ name: entryHeader, value: definitions.join('\n') });
                 }
             });
         }
