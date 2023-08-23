@@ -14,7 +14,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.DirectMessages,
-        GatewayIntentBits.DirectMessageReactions
+        GatewayIntentBits.DirectMessageReactions,
+        GatewayIntentBits.MessageContent
     ]
 });
 
@@ -87,13 +88,19 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 });
 
+const q = [];
 client.on(Events.MessageCreate, async (message) => {
     if (message.author.bot) {
         return;
     }
 
     if (message.channelId === kkeunmalChannelId) {
-        kkeunmal(message);
+        q.push(() => kkeunmal(message));
+        console.log(q.length);
+        while (q.length > 0) {
+            q[0]();
+            q.shift();
+        }
     }
 });
 

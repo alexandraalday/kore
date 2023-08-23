@@ -46,14 +46,14 @@ module.exports = {
         user.send({ embeds: [embed] }).then(msg => msg.react('❌'));
     },
 
-    createBasicEmbed(name) {
+    createBasicEmbed(name, color = '#9F4193') {
         const author = {
             name: name || 'KORE',
             iconURL: 'https://i.imgur.com/V93c5to.png'
         };
 
         return new EmbedBuilder()
-            .setColor('#9F4193')
+            .setColor(color)
             .setAuthor(author);
     },
 
@@ -181,7 +181,7 @@ module.exports = {
         if (!result) {
             embed.addFields({ name: 'No Results', value: 'No results have been found' });
         } else {
-            embed.addFields({ name: 'Result', value : result.text });
+            embed.addFields({ name: 'Result', value: result.text });
             embed.addFields({ name: 'Original Language', value: langs[result.source], inline: true });
             embed.addFields({ name: 'Target Language', value: langs[result.target], inline: true });
             this.setEmbedFooter(embed, 'Anyone can bookmark this message.');
