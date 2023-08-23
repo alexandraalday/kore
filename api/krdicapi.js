@@ -1,4 +1,5 @@
 const got = require('got');
+const cheerio = require('cheerio');
 const Promise = require('promise');
 const https = require('https');
 const rootCas = require('ssl-root-cas').create();
@@ -7,6 +8,7 @@ const querystring = require('querystring');
 const { krDictUrl, krDictToken } = require('../apiconfig.json');
 const et = require('elementtree');
 const pos = require('../common/pos');
+const { isHangul } = require('../common/discordutil');
 
 module.exports = class KrDicApi {
 
@@ -15,7 +17,7 @@ module.exports = class KrDicApi {
             key: krDictToken,
             type_search: 'search',
             part: 'word',
-            method: 'exact',
+            method: 'include',
             multimedia: 0,
             num: 10,
             sort: 'dict',
@@ -31,12 +33,20 @@ module.exports = class KrDicApi {
         rootCas.addFile(path.resolve(reqPath, 'krdic_api_cert.pem'));
         https.globalAgent.options.ca = rootCas;
 
+        let url = `${krDictUrl}search?${querystring.stringify(this.options)}`;
+
+        if (!isHangul(q)) {
+            url = `https://krdict.korean.go.kr/dicMarinerSearch/search?nation=eng&nationCode=6&ParaWordNo=&mainSearchWord=${q}`;
+        }
+
         this.options.q = q;
-        const url = `${krDictUrl}search?${querystring.stringify(this.options)}`;
         const promise = new Promise((resolve, reject) => (async () => {
             try {
+                console.log('Debug -- url', url);
                 const response = await got(url);
+                console.log('Debug -- response', response);
                 resolve(response.body);
+
                 // => '<!doctype html> ...'
             } catch (error) {
                 console.log(error);

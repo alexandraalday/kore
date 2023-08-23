@@ -207,5 +207,18 @@ module.exports = {
         const s2 = s.substring(middle + 1);
 
         return [s1, s2];
+    },
+
+    isHangul(string) {
+        if (typeof string !== 'string' || string.length === 0) {
+            return false;
+        }
+        for (let i = 0; i < string.length; i++) {
+            const char = string.charCodeAt(i);
+            if (char < 0xAC00 || char > 0xD7A3) {
+                return false;
+            }
+        }
+        return true;
     }
 };
