@@ -1,5 +1,4 @@
 const got = require('got');
-const cheerio = require('cheerio');
 const Promise = require('promise');
 const https = require('https');
 const rootCas = require('ssl-root-cas').create();
@@ -15,15 +14,13 @@ module.exports = class KrDicApi {
     constructor() {
         this.options = {
             key: krDictToken,
-            type_search: 'search',
             part: 'word',
             method: 'include',
             multimedia: 0,
             num: 10,
             sort: 'dict',
             translated: 'y',
-            trans_lang: '1',
-            advanced: 'y'
+            trans_lang: '1'
         };
     }
 
@@ -33,7 +30,7 @@ module.exports = class KrDicApi {
         rootCas.addFile(path.resolve(reqPath, 'krdic_api_cert.pem'));
         https.globalAgent.options.ca = rootCas;
 
-        let url = `${krDictUrl}search?${querystring.stringify(this.options)}`;
+        let url = `${krDictUrl}search?${querystring.stringify(this.options)}&q=${encodeURI(q)}`;
 
         if (!isHangul(q)) {
             url = `https://krdict.korean.go.kr/dicMarinerSearch/search?nation=eng&nationCode=6&ParaWordNo=&mainSearchWord=${q}`;
