@@ -1,86 +1,49 @@
 const got = require('got');
-const cheerio = require('cheerio');
 const Promise = require('promise');
 const https = require('https');
 const rootCas = require('ssl-root-cas').create();
 const path = require('path');
+const querystring = require('querystring');
+const { krDictUrl, krDictToken } = require('../apiconfig.json');
+const et = require('elementtree');
+const pos = require('../common/pos');
+const { isHangul } = require('../common/discordutil');
 
 module.exports = class KrDicApi {
-    parseResult(html) {
-        const $ = cheerio.load(html, { normalizeWhitespace: true });
-        this.entries = $('.search_result').children();
-        const count = this.entries.length;
-        const dicEntries = [];
-        let i;
-        for (i = 0; i < count; i += 1) {
-            const dicEntry = {};
 
-            const entry = $(this.entries).eq(i).children();
-            const title = entry.eq(0);
-
-            dicEntry.word = $(title).remove('sup').find('a').eq(0).text()
-                .replace(/\s+/g, ' ')
-                .replace(/[0-9]/g, '')
-                .trim();
-            const h = title.text().match(/\(.*\)/);
-            const p = title.text().match(/\[(.*?)\]/);
-
-            const s = $(entry).find('.star').children().length;
-
-            dicEntry.stars = s;
-
-            let hanja;
-            if (h) {
-                hanja = h[0].slice(1, -1).trim();
-            }
-            dicEntry.hanja = hanja;
-
-            let pronunciation;
-            if (p && p[1]) {
-                pronunciation = p[1].replace('듣기', '').trim();
-            }
-
-            dicEntry.pronunciation = pronunciation;
-
-            const wordTypes = $(title).find('.word_att_type1').text()
-                .replace('「', '')
-                .replace('」', '')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .split(' ');
-
-            dicEntry.wordType = wordTypes[0];
-            dicEntry.wordTypeTranslated = wordTypes[1];
-
-            const senses = $(this.entries).eq(i).find('dd');
-            const entrySenses = [];
-            let j;
-            for (j = 0; j < senses.length; j += 3) {
-                const sense = {};
-                sense.meaning = senses.eq(j).text().trim().replace(/\d+/g, '').replace(/\s+/g, ' ').replace('. ', '').trim();
-                sense.definition = senses.eq(j + 1).text().replace(/\s+/g, ' ').trim();
-                sense.translation = senses.eq(j + 2).text().replace(/\s+/g, ' ').trim();
-                entrySenses.push(sense);
-            }
-            dicEntry.senses = entrySenses;
-            dicEntries.push(dicEntry);
-        }
-
-        if (dicEntries.length === 1 && dicEntries[0].word === '') return [];
-        return dicEntries;
+    constructor() {
+        this.options = {
+            key: krDictToken,
+            part: 'word',
+            method: 'include',
+            multimedia: 0,
+            num: 10,
+            sort: 'dict',
+            translated: 'y',
+            trans_lang: '1'
+        };
     }
 
-    searchWords(q, amount) {
+    searchWords(q) {
         // Needed to fix UNABLE_TO_VERIFY_LEAF_SIGNATURE issue - https://stackoverflow.com/a/60020493
         const reqPath = path.join(__dirname, '../');
         rootCas.addFile(path.resolve(reqPath, 'krdic_api_cert.pem'));
         https.globalAgent.options.ca = rootCas;
 
-        this.url = `https://krdict.korean.go.kr/eng/dicSearch/search?nation=eng&nationCode=6&ParaWordNo=&mainSearchWord=${q}&blockCount=${amount}`;
+        let url = `${krDictUrl}search?${querystring.stringify(this.options)}&q=${encodeURI(q)}`;
+
+        if (!isHangul(q)) {
+            url = `https://krdict.korean.go.kr/dicMarinerSearch/search?nation=eng&nationCode=6&ParaWordNo=&mainSearchWord=${q}`;
+        }
+
+        this.options.q = q;
         const promise = new Promise((resolve, reject) => (async () => {
             try {
-                const response = await got(this.url);
-                resolve(this.parseResult(response.body));
+                console.log('Debug -- url', url);
+                const response = await got(url);
+                console.log('Debug -- response', response);
+                resolve(response.body);
+
                 // => '<!doctype html> ...'
             } catch (error) {
                 console.log(error);
@@ -88,5 +51,39 @@ module.exports = class KrDicApi {
             }
         })());
         return promise;
+    }
+
+    parseResult(r) {
+        this.entries = [];
+
+        et.parse(r).findall('item').forEach((item) => {
+            const entry = {};
+            entry.word = item.find('word') ? item.find('word').text.trim() : '';
+            entry.link = item.find('link') ? item.find('link').text.trim() : '';
+            entry.hanja = item.find('origin') ? item.find('origin').text.trim() : '';
+            entry.pronunciation = item.find('pronunciation') ? item.find('pronunciation').text.trim() : '';
+            entry.wordType = item.find('pos') ? item.find('pos').text.trim() : '';
+            entry.wordTypeTranslated = entry.wordType ? pos[entry.wordType] : '';
+
+            const entrySenses = [];
+            item.findall('sense').forEach((s) => {
+                const sense = {};
+                sense.definition = s.find('definition') ? s.find('definition').text.trim() : '';
+                const senseTranslations = [];
+                s.findall('translation').forEach((t) => {
+                    const translation = {};
+                    translation.definition = t.find('trans_dfn') ? t.find('trans_dfn').text.trim() : '';
+                    translation.meaning = t.find('trans_word') ? t.find('trans_word').text.trim() : '';
+                    senseTranslations.push(translation);
+                });
+                sense.translations = senseTranslations;
+                entrySenses.push(sense);
+            });
+
+            entry.senses = entrySenses;
+            this.entries.push(entry);
+        });
+
+        return this.entries;
     }
 };

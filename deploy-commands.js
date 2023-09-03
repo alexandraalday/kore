@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { Routes } = require('discord-api-types/v9');
-const { clientId, guildId, botToken, commandDirectories } = require('./config.json');
+const { clientId, botToken, commandDirectories } = require('./config.json');
 const { REST } = require('discord.js');
 
 const commands = [];
@@ -23,7 +23,7 @@ module.exports = {
     deployCommands: async () => {
         try {
             await rest.put(
-                Routes.applicationGuildCommands(clientId, guildId),
+                Routes.applicationCommands(clientId),
                 { body: commands }
             );
         } catch (error) {
